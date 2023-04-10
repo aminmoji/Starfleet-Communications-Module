@@ -10,7 +10,11 @@
     <nav>
         <ul>
             <li><a href="/signup">Sign Up</a></li>
-            <li><a href="/signin">Sing In</a></li>
+            <% if (user) { %>
+            <li><a href="/profile"><%= user %></a></li>
+            <% } else { %>
+                <li><a href="/login">Sign In</a></li>    
+            <% } %>
         </ul>
     </nav>
 </body>
