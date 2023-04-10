@@ -3,8 +3,13 @@ const bcrypt = require("bcrypt");
 const sessionRouter = express.Router();
 const User = require("../models/user");
 
-//
-sessionRouter.post("/", async (req, res) => {
+// Index
+sessionRouter.get("/login", (req, res) => {
+  res.render("login.ejs");
+});
+
+// Login / Authenticate /POST
+sessionRouter.post("/login", async (req, res) => {
   try {
     console.log(req.body);
     const username = await User.findOne({ username: req.body.username });
@@ -20,6 +25,7 @@ sessionRouter.post("/", async (req, res) => {
     }
     if (passwordIsValid) {
       req.session.currentUser = username;
+      console.log("yayyyyyyy!");
     }
     res.redirect("/");
   } catch (err) {
@@ -27,4 +33,5 @@ sessionRouter.post("/", async (req, res) => {
   }
 });
 
+// Exports
 module.exports = sessionRouter;
