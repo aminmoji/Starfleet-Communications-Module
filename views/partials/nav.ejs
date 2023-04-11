@@ -1,0 +1,16 @@
+<nav id="nav-standard"> 
+    <% if (currentUser) { %>
+    <a href="/" id="b-one">Home 01</a>
+    <a href="" id="b-two"><%= currentUser.firstname %> 02</a>
+    <a href="" id="b-three">03</a>
+    <form action="/sessions?_method=DELETE" method="POST">
+        <a href="" id="b-five"><input type="submit" value="Log Out 04"></a>
+    </form>
+    <% } else { %>
+        <a href="/" id="b-one">Home 01</a>
+        <a href="/users/new" id="b-two">Register 02</a>
+        <a href="" id="b-three">03</a>
+        <a href="/sessions/new" id="b-five">Login 04</a>
+    </form>
+    <% } %>    
+</nav>

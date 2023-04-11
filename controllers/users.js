@@ -1,38 +1,32 @@
-// Dependencis
-const express = require("express");
-const mongoose = require("mongoose");
+// Dependencies
 const bcrypt = require("bcrypt");
+const express = require("express");
 const userRouter = express.Router();
 const User = require("../models/user");
 
-mongoose.connect(process.env.DATABASE_URL);
-const db = mongoose.connection;
-db.on("error", (err) => console.log(err.message, +"no hailing frequency"));
-db.on("connected", () => console.log("Mango On Screen"));
-db.on("disconnected", () => console.log("End of Transmission"));
-
-// Index/User
-userRouter.get("/", async (req, res) => {
-  const loggedUser = await User.find({ username: req.session.currentUser });
-  res.render("index.ejs", {
-    user: loggedUser,
+// New / Registration
+userRouter.get("/new", (req, res) => {
+  res.render("users/new.ejs", {
+    currentUser: req.session.currentUser,
   });
 });
-
-// New
-userRouter.get("/signup", (req, res) => {
-  res.render("signup.ejs");
+// Create / Registration Route
+userRouter.post("/", async (req, res) => {
+  const user = new User({
+    username: req.body.username,
+    firstname: req.body.firstname,
+    lastname: req.body.lastname,
+    password: (req.body.password = bcrypt.hashSync(
+      req.body.password,
+      bcrypt.genSaltSync(10)
+    )),
+    rank: req.body.rank,
+    ship: req.body.ship,
+    species: req.body.species,
+    profilepic: req.body.profilepic,
+  });
+  user.save().then(res.redirect("/"));
 });
 
-// Create
-userRouter.post("/signup", (req, res) => {
-  console.log(req.body);
-  req.body.password = bcrypt.hashSync(
-    req.body.password,
-    bcrypt.genSaltSync(10)
-  );
-  const createdUser = new User(req.body);
-  createdUser.save().then(res.send("User Created")).then(res.redirect("/"));
-});
-
+// Export User Route
 module.exports = userRouter;

@@ -1,37 +1,45 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const sessionRouter = express.Router();
+const jwt = require("jwt-then");
+const sessionsRouter = express.Router();
 const User = require("../models/user");
 
-// Index
-sessionRouter.get("/login", (req, res) => {
-  res.render("login.ejs");
+//New / Login Page
+sessionsRouter.get("/new", (req, res) => {
+  res.render("sessions/new.ejs", {
+    currentUser: req.session.checkUser,
+  });
 });
 
-// Login / Authenticate /POST
-sessionRouter.post("/login", async (req, res) => {
-  try {
-    console.log(req.body);
-    const username = await User.findOne({ username: req.body.username });
-    if (!username) {
-      return res.status(404).send({ message: "User Not Found!" });
-    }
-    const passwordIsValid = await bcrypt.compare(
-      req.body.password,
-      username.password
-    );
-    if (!passwordIsValid) {
-      return res.status(401).send({ message: "Invalid Password!" });
-    }
-    if (passwordIsValid) {
-      req.session.currentUser = username;
-      console.log("yayyyyyyy!");
-    }
+// Delete / Logout
+sessionsRouter.delete("/", (req, res) => {
+  req.session.destroy((error) => {
     res.redirect("/");
-  } catch (err) {
-    res.status(500).send({ message: err.message });
+  });
+});
+
+// Create / Login
+sessionsRouter.post("/", async (req, res) => {
+  const checkUser = await User.findOne({
+    username: req.body.username,
+  });
+  if (!checkUser) {
+    res.send("No Crew Found");
+  } else {
+    const passwordMatches = bcrypt.compareSync(
+      req.body.password,
+      checkUser.password
+    );
+    if (passwordMatches) {
+      req.session.currentUser = checkUser;
+      res.redirect("/", {
+        token: jwt.sign({ id: checkUser.id }, process.env.SECRET),
+      });
+    } else {
+      res.send("Invalid Credentials");
+    }
   }
 });
 
-// Exports
-module.exports = sessionRouter;
+// Export
+module.exports = sessionsRouter;
