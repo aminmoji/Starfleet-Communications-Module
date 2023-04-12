@@ -1,6 +1,5 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const jwt = require("jwt-then");
 const sessionsRouter = express.Router();
 const User = require("../models/user");
 
@@ -10,6 +9,13 @@ sessionsRouter.get("/new", (req, res) => {
     currentUser: req.session.checkUser,
   });
 });
+
+// New Chat
+// sessionsRouter.get("/new_chat", (req, res) => {
+//   res.render("sessions/new_chat.ejs", {
+//     currentUser: req.session.checkUser,
+//   });
+// });
 
 // Delete / Logout
 sessionsRouter.delete("/", (req, res) => {
@@ -32,9 +38,7 @@ sessionsRouter.post("/", async (req, res) => {
     );
     if (passwordMatches) {
       req.session.currentUser = checkUser;
-      res.redirect("/", {
-        token: jwt.sign({ id: checkUser.id }, process.env.SECRET),
-      });
+      res.redirect("/");
     } else {
       res.send("Invalid Credentials");
     }

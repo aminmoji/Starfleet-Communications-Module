@@ -2,10 +2,16 @@
     <% if (currentUser) { %>
     <a href="/" id="b-one">Home 01</a>
     <a href="" id="b-two"><%= currentUser.firstname %> 02</a>
-    <a href="" id="b-three">03</a>
-    <form action="/sessions?_method=DELETE" method="POST">
-        <a href="" id="b-five"><input type="submit" value="Log Out 04"></a>
+    <a href="/users/profile" id="b-three">profile 03</a>
+    <form action="/sessions?_method=DELETE" method="POST" id="logOut">
+        <a href="" id="b-five" onclick="submitFunction()">Log Out 04</a>
     </form>
+    <script>
+        function submitFunction() {
+            button = document.getElementById("logOut");
+            button.submit();
+        }
+    </script>
     <% } else { %>
         <a href="/" id="b-one">Home 01</a>
         <a href="/users/new" id="b-two">Register 02</a>

@@ -28,5 +28,13 @@ userRouter.post("/", async (req, res) => {
   user.save().then(res.redirect("/"));
 });
 
+// Edit
+userRouter.get("/profile/:id", async (req, res) => {
+  const user = await User.findById(req.params.id).exec();
+  res.render("profile.ejs", {
+    user,
+  });
+});
+
 // Export User Route
 module.exports = userRouter;
