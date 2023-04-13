@@ -3,8 +3,10 @@ const app = express();
 const methodOverRide = require("method-override");
 const mongoose = require("mongoose");
 const session = require("express-session");
-const server = require("http").createServer(app);
-const io = require("socket.io")(server);
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 require("dotenv").config();
 
 // Middlewares
@@ -32,8 +34,13 @@ const userController = require("./controllers/users");
 app.use("/users", userController);
 
 const sessionsController = require("./controllers/sessions");
-const User = require("./models/user");
 app.use("/sessions", sessionsController);
+
+const chatroomController = require("./controllers/chatroomController");
+app.use("/chatroomController", chatroomController);
+const User = require("./models/user");
+const Message = require("./models/message");
+const ChatroomDm = require("./models/chatroom_DM");
 
 // Index
 app.get("/", (req, res) => {
@@ -48,7 +55,7 @@ app.get("/", (req, res) => {
   }
 });
 
-// New Personal Chat
+// Find New Personal Chat
 app.get("/new_chat", (req, res) => {
   res.render("new_chat.ejs", {
     currentUser: req.session.currentUser,
@@ -60,7 +67,40 @@ app.post("/search", async (req, res) => {
   console.log(req.body.query);
   const query = req.body.query;
   if (req.body.query.length) {
-    const users = await User.find({ lastname: query }).exec();
+    const users = await User.find({
+      $or: [
+        {
+          lastname: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          firstname: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          rank: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          ship: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+        {
+          species: {
+            $regex: query,
+            $options: "i",
+          },
+        },
+      ],
+    }).exec();
     console.log(users);
     res.render("search_results.ejs", {
       users,
@@ -72,8 +112,15 @@ app.post("/search", async (req, res) => {
   }
 });
 
-io.on("connection", function (socket) {
-  console.log("A user connected");
+// Socket.io
+io.on("connection", (socket) => {
+  console.log("a user connected");
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+    socket.on("chat message", (msg) => {
+      console.log("message: " + msg);
+    });
+  });
 });
 
 // Listener

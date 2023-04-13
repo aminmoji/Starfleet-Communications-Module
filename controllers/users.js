@@ -29,10 +29,10 @@ userRouter.post("/", async (req, res) => {
 });
 
 // Edit
-userRouter.get("/profile/:id", async (req, res) => {
-  const user = await User.findById(req.params.id).exec();
-  res.render("profile.ejs", {
-    user,
+userRouter.get("/:id/profile/", async (req, res) => {
+  const currentUser = await User.findById(req.params.id).exec();
+  res.render("users/profile.ejs", {
+    currentUser,
   });
 });
 

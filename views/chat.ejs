@@ -62,47 +62,45 @@
 					<div class="bar-10"></div>
 				</div>
 				<main>
-				<script>
-					let socket = io();
-					
-				</script>		
+	
 					<!-- Start your content here. -->
 		
 					<h2>Welcome <%= currentUser.firstname %>,</h2>
                     
                     <div class="lcars-text-bar">
-                        <span>new chat</span>
+                        <span>chat with <%= otherUser.rank %> <%= otherUser.lastname %> </span>
                     </div>
-					<div class="buttons">
-						<form method="POST" action="/search">
-							<label for="query">Search:</label>
-							<input type="text" id="query" name="query" placeholder="Search For StarFleet Crew">
-							<button type="submit">Search</button>
-						</form>
-					</div>
-					<div id="contacts" class="mt-3">
-						<ul>
-							<% users.forEach(function(user) { %>
-								<form action="chatroomController/chat/<%= user._id %>" method="GET">
-									<li><input type="submit" value="<%= user.rank %> <%= user.firstname %> <%= user.lastname %>" target="_blank"/></li>
-								</form>
-					<!-- <script>
-						function chatFunction() {
-							button = document.getElementById("<%= user.username %>");
-							button.submit();
-						}
-					</script> -->
-							<% }) %>
-						</ul>
-					</div>
+
+					<ul id="messages">
+
+					</ul>
+					<form id="form" action="">
+					  <input id="input" autocomplete="off" /><button>Send</button>
+					</form>
+
+
 					<!-- End content area. -->
 
 					
 				</main>
 			</div>
 		</div>
-	</section>	
+	</section>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+	var socket = io();
+	var form = document.getElementById('form');
+  	var input = document.getElementById('input');
 
+ 	form.addEventListener('submit', function(e) {
+    e.preventDefault();
+	console.log(input.value)
+    if (input.value) {
+      socket.emit('chat message', input.value);
+      input.value = '';
+    }
+  });
+	</script>
 	<script type="text/javascript" src="/lcars.js"></script>
 </body>
 

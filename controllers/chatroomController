@@ -1,6 +1,0 @@
-const bcrypt = require("bcrypt");
-const express = require("express");
-const userRouter = express.Router();
-const Chatroom = require("../models/chatroom");
-
-module.exports = userRouter;

@@ -17,11 +17,11 @@ sessionsRouter.get("/new", (req, res) => {
 //   });
 // });
 
-// Delete / Logout
-sessionsRouter.delete("/", (req, res) => {
-  req.session.destroy((error) => {
-    res.redirect("/");
-  });
+// Logout
+sessionsRouter.get("/logout", (req, res) => {
+  console.log("logged out");
+  req.session.destroy();
+  res.redirect("/");
 });
 
 // Create / Login
