@@ -30,7 +30,7 @@ const register = async (req, res) => {
       await user.save();
     }
 
-    res.render("login", { message: "Registration Was Successful." });
+    res.render("/", { message: "Registration Was Successful." });
   } catch (error) {
     console.log(error.message);
   }
@@ -87,13 +87,28 @@ const loadProfile = async (req, res) => {
 };
 
 const editProfile = async (req, res) => {
-  await User.findByIdAndUpdate(req.session.user._id, req.body);
-  res.redirect("dashboard");
+  const update = {
+    username: req.body.username,
+    firstname: req.body.firstname,
+    lastname: req.body.lastname,
+    password: req.body.password,
+    rank: req.body.rank,
+    ship: req.body.ship,
+    species: req.body.species,
+  };
+
+  if (req.file) {
+    update.image = req.file.filename;
+  }
+  await User.findByIdAndUpdate(req.session.user._id, update);
+  console.log(update);
+  res.redirect("/dashboard");
 };
 
 const deleteProfile = async (req, res) => {
   await User.findByIdAndDelete(req.session.user._id);
-  res.redirect("/");
+  console.log("deleted");
+  res.redirect("/login");
 };
 
 const loadDashboard = async (req, res) => {

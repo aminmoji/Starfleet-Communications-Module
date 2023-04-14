@@ -71,30 +71,29 @@
                         <span>Edit profile</span>
                     </div>
                     <div class="edit-profile">
-                        <form action="/?_method=PUT" method="POST" enctype="multipart/form-data">
-
-                            <input type="text" name="username" placeholder="Enter Desired Username" value="<%= user.username %>">
+                        <form action="/update?_method=PUT" method="POST">
+                            <input type="text" name="username" placeholder="<%= user.username %>" />
                             <br><br>
-                            <input type="text" name="firstname" placeholder="Enter Your First Name" value="<%= user.firstname %>">
+                            <input type="text" name="firstname" placeholder="<%= user.firstname %>" />
                             <br><br>
-                            <input type="text" name="lastname" placeholder="Enter Your Last Name" value="<%= user.lastname %>">
+                            <input type="text" name="lastname" placeholder="<%= user.lastname %>" />
                             <br><br>
-                            <input type="password" name="password" placeholder="Enter Password">
+                            <input type="password" name="password" placeholder="Enter Password" required>
                             <br><br>
                             <label for="image">Select Your Picture: </label>
                             <input type="file" name="image">
                             <br><br>
-                            <input type="text" name="rank" placeholder="Enter Your Rank" value="<%= user.rank %>">
+                            <input type="text" name="rank" placeholder="<%= user.rank %>" />
                             <br><br>
-                            <input type="text" name="ship" placeholder="Enter Your Assigned Ship" value="<%= user.ship %>">
+                            <input type="text" name="ship" placeholder="<%= user.ship %>" />
                             <br><br>
-                            <input type="text" name="species" placeholder="Enter Your Species" value="<%= user.species %>">
+                            <input type="text" name="species" placeholder="<%= user.species %>" />
                             <br><br>
                             <input type="submit" value="EDIT">
-                            <form action="/<%= user._id %>?_method=DELETE" method="POST">
-                                <input type="submit" value="Delete">
-                            </form>
                         </form>
+						<form action="/delete?_method=DELETE" method="POST">
+							<input type="submit" value="Delete">
+						</form>
 
                         <% if(typeof message !== "undefined") { %>
                             <p style="color: green"><%= message %></p>

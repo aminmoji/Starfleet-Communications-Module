@@ -43,9 +43,9 @@ user_route.get("/logout", auth.isLoggedin, userController.logout);
 user_route.post("/lookUp", userController.lookUpCrew);
 
 user_route.get("/profile", auth.isLoggedin, userController.loadProfile);
-user_route.post("/", auth.isLoggedin, userController.editProfile);
+user_route.post("/update", auth.isLoggedin, userController.editProfile);
 
-user_route.post("/", auth.isLoggedin, userController.deleteProfile);
+user_route.post("/delete", auth.isLoggedin, userController.deleteProfile);
 
 user_route.get("/dashboard", auth.isLoggedin, userController.loadDashboard);
 user_route.post("/save-chat", userController.saveChat);
