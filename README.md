@@ -15,4 +15,4 @@ Group Chats: Based on ship assignment, Missions or just chats with more than two
 
 Search Option: To find crew members based on name, ship and species.
 
-
+Let's Boldly Go Where No One Has Gone Before: https://starfleet-comm-module.herokuapp.com/
