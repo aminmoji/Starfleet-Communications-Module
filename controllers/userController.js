@@ -30,7 +30,7 @@ const register = async (req, res) => {
       await user.save();
     }
 
-    res.render("/", { message: "Registration Was Successful." });
+    res.redirect("/", { message: "Registration Was Successful." });
   } catch (error) {
     console.log(error.message);
   }
