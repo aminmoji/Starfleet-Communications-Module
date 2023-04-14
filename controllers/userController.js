@@ -1,7 +1,6 @@
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 const bcrypt = require("bcrypt");
-const fs = require("fs");
 
 const registerLoad = async (req, res) => {
   try {
@@ -22,12 +21,7 @@ const register = async (req, res) => {
         username: req.body.username,
         firstname: req.body.firstname,
         lastname: req.body.lastname,
-        image: {
-          data: fs.readFileSync(
-            path.join(__dirname, "../public/images/" + req.file.filename)
-          ),
-          contentType: "image/png", // change the image type according to your requirement
-        },
+        image: "images/" + req.file.filename,
         password: passwordHash,
         ship: req.body.ship,
         species: req.body.species,
