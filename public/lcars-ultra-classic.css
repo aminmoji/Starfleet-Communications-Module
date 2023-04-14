@@ -47,6 +47,14 @@ input, textarea, button, select {
 }
 */
 
+#title {
+	text-align: left;
+}
+
+.registration {
+	align-content: center;
+}
+
 @font-face {
 	font-family: 'Antonio';
 	font-weight: 400;
@@ -69,6 +77,80 @@ body	{
 	font-weight: 400;
 	line-height: 1.5;
 	color: #c7f;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.example::-webkit-scrollbar {
+	display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .example {
+	-ms-overflow-style: none;  /* IE and Edge */
+	scrollbar-width: none;  /* Firefox */
+  }
+
+#chat-container {
+	width: auto;
+	height: 500px;
+	border: 5px solid rgb(56, 1, 56);
+	overflow-y: scroll;
+	word-wrap: normal;
+
+}
+
+#chat-form {
+	text-align: center;
+}
+
+.chat-section {
+	display: none;
+  }
+
+.query-div {
+	margin-top: 15px;
+}
+
+.query-div img {
+	border-radius: 50%;
+	height: 50px;
+	width: 50px;
+
+}
+
+li img {
+	border-radius: 50%;
+	width: 70px;
+	height: 70px;
+}
+
+.current-user-chat {
+	text-align: right;
+}
+
+.other-user.chat {
+	text-align: left;
+}
+
+.user-list {
+	cursor: pointer;
+}
+
+ul a {
+	text-decoration: none;
+}
+
+ul > li{
+    display: inline-block;
+    padding: 10px
+}
+
+li {
+	list-style: none;
+}
+
+sup {
+	size: 5px;
 }
 
 a	{
@@ -108,6 +190,12 @@ a:active {
 	display: flex;
 	width: 100%;
 	column-gap: 12px;
+}
+
+.crewPics {
+	border-radius: 50%;
+	height: 50px;
+	width: 50px;
 }
 
 #column-1 {
