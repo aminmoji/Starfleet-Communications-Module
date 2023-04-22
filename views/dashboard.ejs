@@ -80,7 +80,7 @@
                             <%if (users.length) { %>
                                    <% for(let i = 0; i <users.length; i++ ) {%>
                                             <li class="list-group user-list" id="<%= users[i]["rank"]%> <%= users[i]["lastname"]%>" data-id="<%= users[i]["_id"] %>">
-                                                <img src="https://<%=users[i]['image']%>" alt="" width="100px" height="100px">
+                                                <img src="<%=users[i]['image']%>" alt="" width="100px" height="100px">
                                                 <a href="#"><%= users[i]['name'] %></a>
                                             </li>
                                         <%if (users[i]["is_online"] == 1) {%>
