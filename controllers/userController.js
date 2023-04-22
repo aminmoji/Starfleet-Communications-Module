@@ -21,7 +21,10 @@ const register = async (req, res) => {
         username: req.body.username,
         firstname: req.body.firstname,
         lastname: req.body.lastname,
-        image: "images/" + req.file.filename,
+        image: {
+          filename: req.file.filename,
+          filepath: req.file.filepath,
+        },
         password: passwordHash,
         ship: req.body.ship,
         species: req.body.species,
@@ -29,8 +32,7 @@ const register = async (req, res) => {
       });
       await user.save();
     }
-
-    res.redirect("/login", { message: "Registration Was Successful." });
+    res.redirect("/login");
   } catch (error) {
     console.log(error.message);
   }

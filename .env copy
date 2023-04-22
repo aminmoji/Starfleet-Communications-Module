@@ -1,3 +1,0 @@
-DATABASE_URL=mongodb+srv://aminmoj:QvSPRlz7t50VVi9Q@cluster0.f4gxajs.mongodb.net/DYNAMIC-CHAT?retryWrites=true&w=majority
-SESSION_SECRET="GOBOLDLYWHERENOONEHASGONEBEFORE"
-PORT=3000
