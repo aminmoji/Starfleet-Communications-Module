@@ -21,10 +21,7 @@ const register = async (req, res) => {
         username: req.body.username,
         firstname: req.body.firstname,
         lastname: req.body.lastname,
-        image: {
-          filename: req.file.filename,
-          filepath: req.file.filepath,
-        },
+        image: req.file.path,
         password: passwordHash,
         ship: req.body.ship,
         species: req.body.species,
