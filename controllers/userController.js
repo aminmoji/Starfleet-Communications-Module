@@ -21,7 +21,9 @@ const register = async (req, res) => {
         username: req.body.username,
         firstname: req.body.firstname,
         lastname: req.body.lastname,
-        image: req.file.path,
+        image: {
+          dataBin: fs.readFileSync(path.join("images/" + req.file.filename)),
+        },
         password: passwordHash,
         ship: req.body.ship,
         species: req.body.species,
