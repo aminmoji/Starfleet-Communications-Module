@@ -1,6 +1,8 @@
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 const bcrypt = require("bcrypt");
+const fs = require("fs");
+const path = require("path");
 
 const registerLoad = async (req, res) => {
   try {
@@ -33,7 +35,7 @@ const register = async (req, res) => {
     }
     res.redirect("/login");
   } catch (error) {
-    console.log(error.message);
+    console.log("REgistration Error" + error.message);
   }
 };
 
