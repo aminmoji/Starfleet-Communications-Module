@@ -1,3 +1,5 @@
 {
-    "liveServer.settings.port": 5501
+    "liveServer.settings.port": 5501,
+    "appService.defaultWebAppToDeploy": "undefined/subscriptions/1ba95dbc-2199-4c0e-9a1e-235724858b0f/resourceGroups/LACARS-APP-PLUGIN/providers/Microsoft.Web/sites/LACARS-APP-PLUGIN",
+    "appService.deploySubpath": "."
 }
