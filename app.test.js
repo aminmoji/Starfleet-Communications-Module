@@ -6,7 +6,9 @@ describe("Database Connection Test", () => {
     require("dotenv").config();
 
     // Connect to the MongoDB database
-    mongoose.connect(process.env.DATABASE_URL);
+    mongoose.connect(
+      "mongodb+srv://aminmoj:QvSPRlz7t50VVi9Q@cluster0.f4gxajs.mongodb.net/StarFleet_Comm_Module?retryWrites=true&w=majority"
+    );
   });
 
   afterAll(async () => {
