@@ -4,9 +4,9 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "jest --coverage",
     "start": "node app.js",
-    "build": "npm run build"
+    "test": "jest --coverage",
+    "build": "echo 1"
   },
   "keywords": [],
   "author": "",
