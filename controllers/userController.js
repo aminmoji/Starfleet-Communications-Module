@@ -19,49 +19,46 @@ const register = async (req, res) => {
     const checkUserName = await User.findOne({ username: req.body.username });
     if (checkUserName) {
       return res.render("register", { message: "Username Already Exists." });
-    }
-
-    const passwordHash = await bcrypt.hash(req.body.password, 10);
-    const user = new User({
-      username: req.body.username,
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
-      password: passwordHash,
-      ship: req.body.ship,
-      species: req.body.species,
-      rank: req.body.rank,
-    });
-
-    if (req.file) {
-      console.log(process.env.AZURE_STORAGE_CONNECTION_STRING);
-      const blobServiceClient = BlobServiceClient.fromConnectionString(
-        process.env.AZURE_STORAGE_CONNECTION_STRING
-      );
-
-      const containerName = process.env.CONTAINER_NAME;
-      const containerClient =
-        blobServiceClient.getContainerClient(containerName);
-      const blobName = req.file.originalname;
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-      const imageData = req.file.buffer;
-
-      await blockBlobClient.upload(imageData, imageData.length);
-
-      const imageUrl = blockBlobClient.url;
-      user.image = imageUrl;
-
-      const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
-      await client.connect();
-      const database = client.db(process.env.MONGODB_DATABASE_NAME);
-      const collection = database.collection("users");
-      await collection.insertOne(user);
-      await client.close();
     } else {
-      console.log("oh boy");
-    }
+      if (req.file) {
+        console.log(process.env.AZURE_STORAGE_CONNECTION_STRING);
+        const blobServiceClient = BlobServiceClient.fromConnectionString(
+          process.env.AZURE_STORAGE_CONNECTION_STRING
+        );
+        const containerName = process.env.CONTAINER_NAME;
+        const containerClient =
+          blobServiceClient.getContainerClient(containerName);
+        const blobName = req.file.originalname;
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        const imageData = req.file.buffer;
 
-    await user.save();
-    res.redirect("/login");
+        await blockBlobClient.upload(imageData, imageData.length);
+
+        const imageUrl = blockBlobClient.url;
+        // user.image = imageUrl;
+
+        // const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
+        // await client.connect();
+        // const database = client.db(process.env.MONGODB_DATABASE_NAME);
+        // const collection = database.collection("users");
+        // await collection.insertOne(user);
+        // await client.close();
+
+        const passwordHash = await bcrypt.hash(req.body.password, 10);
+        const user = new User({
+          username: req.body.username,
+          firstname: req.body.firstname,
+          lastname: req.body.lastname,
+          password: passwordHash,
+          ship: req.body.ship,
+          species: req.body.species,
+          rank: req.body.rank,
+          image: imageUrl,
+        });
+        await user.save();
+      }
+      res.redirect("/login");
+    }
   } catch (error) {
     console.log("Registration Error: " + error.message);
   }

@@ -80,9 +80,8 @@
                             <% if (users.length) { %>
                                 <% for (let i = 0; i < users.length; i++) { %>
                                   <li class="list-group user-list" id="<%= users[i]['rank'] %> <%= users[i]['lastname'] %>" data-id="<%= users[i]['_id'] %>">
-                                    <% if (users[i].image && users[i].image.dataBin) { %>
-                                        <img src="data:image/jpeg;base64,data:image/jpg;base64,<%= users[i].image.dataBin.toString('base64') %>" alt="" width="100px" height="100px">
-                                    <% } %>                                    
+                                        <img src="<%= users[i]['image'] %>" alt="" width="100px" height="100px">
+                                                             
                                     <a href="#"><%= users[i]['name'] %></a>
                                   </li>
                                   <% if (users[i]['is_online'] == 1) { %>
