@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 
 const mongoose = require("mongoose");
 mongoose.connect(process.env.DATABASE_URL);
@@ -9,7 +10,7 @@ mongoose_db = mongoose.connection;
 mongoose_db.on("error", (err) => console.log(`${err.message} LCARS Down`));
 mongoose_db.on("connected", () => console.log("LCARS Connected"));
 mongoose_db.on("disconnected", () => console.log("LCARS Disconnected"));
-const app = require("express")();
+const app = express();
 const http = require("http").Server(app);
 
 const userRoute = require("./routes/userRoute");
@@ -17,7 +18,7 @@ const User = require("./models/userModel");
 const Chat = require("./models/chatModel");
 
 app.use("/", userRoute);
-app.use("./public/images", express.static("images"));
+app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 const io = require("socket.io")(http);
 

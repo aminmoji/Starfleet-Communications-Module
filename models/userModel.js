@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { buffer } = require("stream/consumers");
 
 const userSchema = mongoose.Schema(
   {
@@ -20,7 +19,7 @@ const userSchema = mongoose.Schema(
       required: true,
     },
     image: {
-      dataBin: Buffer,
+      type: String,
     },
     password: {
       type: String,

@@ -1,8 +1,10 @@
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 const bcrypt = require("bcrypt");
-const fs = require("fs");
-const path = require("path");
+const { BlobServiceClient } = require("@azure/storage-blob");
+const streamifier = require("streamifier");
+const { MongoClient } = require("mongodb");
+require("dotenv").config();
 
 const registerLoad = async (req, res) => {
   try {
@@ -16,26 +18,52 @@ const register = async (req, res) => {
   try {
     const checkUserName = await User.findOne({ username: req.body.username });
     if (checkUserName) {
-      res.render("register", { message: "Username Already Exists." });
-    } else {
-      const passwordHash = await bcrypt.hash(req.body.password, 10);
-      const user = new User({
-        username: req.body.username,
-        firstname: req.body.firstname,
-        lastname: req.body.lastname,
-        image: {
-          dataBin: fs.readFileSync(path.join("images/" + req.file.filename)),
-        },
-        password: passwordHash,
-        ship: req.body.ship,
-        species: req.body.species,
-        rank: req.body.rank,
-      });
-      await user.save();
+      return res.render("register", { message: "Username Already Exists." });
     }
+
+    const passwordHash = await bcrypt.hash(req.body.password, 10);
+    const user = new User({
+      username: req.body.username,
+      firstname: req.body.firstname,
+      lastname: req.body.lastname,
+      password: passwordHash,
+      ship: req.body.ship,
+      species: req.body.species,
+      rank: req.body.rank,
+    });
+
+    if (req.file) {
+      console.log(process.env.AZURE_STORAGE_CONNECTION_STRING);
+      const blobServiceClient = BlobServiceClient.fromConnectionString(
+        process.env.AZURE_STORAGE_CONNECTION_STRING
+      );
+
+      const containerName = process.env.CONTAINER_NAME;
+      const containerClient =
+        blobServiceClient.getContainerClient(containerName);
+      const blobName = req.file.originalname;
+      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+      const imageData = req.file.buffer;
+
+      await blockBlobClient.upload(imageData, imageData.length);
+
+      const imageUrl = blockBlobClient.url;
+      user.image = imageUrl;
+
+      const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
+      await client.connect();
+      const database = client.db(process.env.MONGODB_DATABASE_NAME);
+      const collection = database.collection("users");
+      await collection.insertOne(user);
+      await client.close();
+    } else {
+      console.log("oh boy");
+    }
+
+    await user.save();
     res.redirect("/login");
   } catch (error) {
-    console.log("REgistration Error" + error.message);
+    console.log("Registration Error: " + error.message);
   }
 };
 
@@ -52,9 +80,7 @@ const login = async (req, res) => {
     const username = req.body.username;
     const password = req.body.password;
 
-    const userData = await User.findOne({
-      username: username,
-    });
+    const userData = await User.findOne({ username: username });
     if (userData) {
       const passwordMatch = await bcrypt.compare(password, userData.password);
       if (passwordMatch) {
@@ -90,19 +116,33 @@ const loadProfile = async (req, res) => {
 };
 
 const editProfile = async (req, res) => {
+  const passwordHash = await bcrypt.hash(req.body.password, 10);
   const update = {
     username: req.body.username,
     firstname: req.body.firstname,
     lastname: req.body.lastname,
-    password: req.body.password,
+    password: passwordHash,
     rank: req.body.rank,
     ship: req.body.ship,
     species: req.body.species,
   };
 
   if (req.file) {
-    update.image = req.file.filename;
+    const blobName = getBlobName(req.file.originalname);
+    const containerName = process.env.CONTAINER_NAME;
+    const blobService = new BlobServiceClient(
+      process.env.AZURE_STORAGE_CONNECTION_STRING
+    );
+    const containerClient = blobService.getContainerClient(containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    await blockBlobClient.uploadData(req.file.buffer, {
+      blobHTTPHeaders: { blobContentType: req.file.mimetype },
+    });
+
+    update.image = blobName;
   }
+
   await User.findByIdAndUpdate(req.session.user._id, update);
   console.log(update);
   res.redirect("/dashboard");
