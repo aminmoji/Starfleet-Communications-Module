@@ -16,7 +16,7 @@ Users can register, maintain a crew profile, see other users, search for crew me
 - Stored conversation history
 - Crew-member search
 - EJS-rendered interface
-- Jest/Supertest test setup
+- Jest database integration test setup
 
 ## Tech stack
 
@@ -29,7 +29,6 @@ Users can register, maintain a crew profile, see other users, search for crew me
 - express-session
 - Azure Blob Storage
 - Jest
-- Supertest
 
 ## Screenshots
 
