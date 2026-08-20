@@ -2,8 +2,6 @@ const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 const bcrypt = require("bcrypt");
 const { BlobServiceClient } = require("@azure/storage-blob");
-const streamifier = require("streamifier");
-const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
 const registerLoad = async (req, res) => {
@@ -21,7 +19,6 @@ const register = async (req, res) => {
       return res.render("register", { message: "Username Already Exists." });
     } else {
       if (req.file) {
-        console.log(process.env.AZURE_STORAGE_CONNECTION_STRING);
         const blobServiceClient = BlobServiceClient.fromConnectionString(
           process.env.AZURE_STORAGE_CONNECTION_STRING
         );
@@ -125,23 +122,23 @@ const editProfile = async (req, res) => {
   };
 
   if (req.file) {
-    const blobName = getBlobName(req.file.originalname);
+    const blobName = `${Date.now()}-${req.file.originalname}`;
     const containerName = process.env.CONTAINER_NAME;
-    const blobService = new BlobServiceClient(
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
       process.env.AZURE_STORAGE_CONNECTION_STRING
     );
-    const containerClient = blobService.getContainerClient(containerName);
+    const containerClient =
+      blobServiceClient.getContainerClient(containerName);
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
     await blockBlobClient.uploadData(req.file.buffer, {
       blobHTTPHeaders: { blobContentType: req.file.mimetype },
     });
 
-    update.image = blobName;
+    update.image = blockBlobClient.url;
   }
 
   await User.findByIdAndUpdate(req.session.user._id, update);
-  console.log(update);
   res.redirect("/dashboard");
 };
 

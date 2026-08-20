@@ -71,7 +71,7 @@
                         <span>Edit profile</span>
                     </div>
                     <div class="edit-profile">
-                        <form action="/update?_method=PUT" method="POST">
+                        <form action="/update" method="POST" enctype="multipart/form-data">
                             <input type="text" name="username" placeholder="<%= user.username %>" />
                             <br><br>
                             <input type="text" name="firstname" placeholder="<%= user.firstname %>" />
