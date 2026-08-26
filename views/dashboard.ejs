@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-	<title>StarFleet Comms</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="format-detection" content="telephone=no">
-	<meta name="format-detection" content="date=no">
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="/public/images/favicon.ico">
-	<link rel="stylesheet" href="lcars-ultra-classic.css">
-	<link rel="stylesheet" href="/lcars-colors.css">
-	<script src="/jquery-3.6.3.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
-</head>
+<%- include("./partials/head", { pageTitle: "Starfleet Communications — Dashboard" }) %>
 
 <body>
 	<section class="wrap-standard" id="column-3">
@@ -69,150 +55,64 @@
 				</div>
 				<main>
 
-					<!-- Start your content here. -->
-		
-                    <h3>hello <%= user.rank %> <%= user.lastname %>,</h3>  
+					<div data-current-user-id="<%= user._id %>">
+                        <h1>Welcome, <%= user.rank %> <%= user.lastname %></h1>
+                        <p>Select a crew member to open a private real-time channel.</p>
 
-                    <h3 id="guide">Click on Crew to start the chat</h3>
-                    
-                    <div class="main-body">
-                        <ul class="list-group">
-                            <% if (users.length) { %>
-                                <% for (let i = 0; i < users.length; i++) { %>
-                                  <li class="list-group user-list" id="<%= users[i]['rank'] %> <%= users[i]['lastname'] %>" data-id="<%= users[i]['_id'] %>">
-                                        <img src="<%= users[i]['image'] %>" alt="" width="100px" height="100px">
-                                                             
-                                    <a href="#"><%= users[i]['name'] %></a>
-                                  </li>
-                                  <% if (users[i]['is_online'] == 1) { %>
-                                    <sup class="online-status" id="<%= users[i]['_id'] %>">Online</sup>
-                                  <% } else { %>
-                                    <sup class="offline-status" id="<%= users[i]['_id'] %>">Offline</sup>
-                                  <% } %>
+                        <form action="/dashboard" method="GET" class="crew-search" role="search">
+                            <label>
+                                <span class="hop">Search crew</span>
+                                <input type="search" name="q" value="<%= query %>" placeholder="Name, rank, ship, or species" maxlength="60">
+                            </label>
+                            <input type="submit" value="Search">
+                            <% if (query) { %>
+                                <a href="/dashboard">Clear search</a>
+                            <% } %>
+                        </form>
+
+                        <% if (users.length) { %>
+                            <ul class="crew-grid">
+                                <% for (const crewMember of users) { %>
+                                    <li>
+                                        <button
+                                            type="button"
+                                            class="user-list"
+                                            data-id="<%= crewMember._id %>"
+                                            data-label="<%= crewMember.rank %> <%= crewMember.lastname %>"
+                                        >
+                                            <img src="<%= crewMember.image || '/default-avatar.svg' %>" alt="">
+                                            <span>
+                                                <strong><%= crewMember.rank %> <%= crewMember.firstname %> <%= crewMember.lastname %></strong>
+                                                <span class="presence <%= crewMember.is_online ? 'online-status' : 'offline-status' %>" id="<%= crewMember._id %>-status">
+                                                    <%= crewMember.is_online ? "Online" : "Offline" %> · <%= crewMember.ship %>
+                                                </span>
+                                            </span>
+                                        </button>
+                                    </li>
                                 <% } %>
-                              <% } %>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="tagLine"></h4>
-                        <div class="chat-section" height="300px" width="200px">
-                            <div id="chat-container">
-                                
-                            </div>
-                            <form action="" id="chat-form">
-                                <input type="text" name="message" placeholder="Enter Message" id="message">    
-                                <input type="submit" value="Send Message">
+                            </ul>
+                        <% } else { %>
+                            <p class="notice">No crew members match this search.</p>
+                        <% } %>
+
+                        <section class="chat-section" aria-label="Conversation" hidden>
+                            <h2 class="tagLine">Secure channel</h2>
+                            <p id="chat-status" aria-live="polite"></p>
+                            <div id="chat-container" aria-live="polite"></div>
+                            <form id="chat-form">
+                                <label class="hop" for="message">Message</label>
+                                <input type="text" name="message" placeholder="Enter message" id="message" maxlength="1000" autocomplete="off" required>
+                                <input type="submit" value="Send">
                             </form>
-                        </div>
-                
-                    </div>
+                        </section>
+					</div>
 				</main>
 			</div>
 		</div>
 	</section>
-    <script>
-        
-        var sender_id = "<%= user._id %>";
-        var receiver_id;
-        var socket = io("/user-namespace", {
-            auth: {
-                token: "<%= user._id %>",
-            }
-        });
-
-        $(document).ready(function() {
-            $('.user-list').click(function() {
-                $(".tagLine").html('');
-               var userId = $(this).attr("data-id");
-               receiver_id = userId;
-               $(".tagLine").html("Now Communicating with "+$(this).attr("id"));
-               $(".chat-section").show();
-               socket.emit("existingChats", {sender_id: sender_id, receiver_id: receiver_id});
-            })
-        })
-
-
-        //Update user connection status
-
-        socket.on("getOnlineUser", (data) => {
-            $("#"+data.user_id+"-status").text("Online");
-            $("#"+data.user_id+"-status").removeClass("offline-status");
-            $("#"+data.user_id+"-status").addClass("online-status");
-        })
-
-        socket.on("getOfflineUser", (data) => {
-            $("#"+data.user_id+"-status").text("Offline");
-            $("#"+data.user_id+"-status").removeClass("online-status");
-            $("#"+data.user_id+"-status").addClass("offline-status");
-        })
-         
-        // save chat
-        $("#chat-form").submit((e) => {
-            e.preventDefault();
-            
-            let message = $("#message").val();
-            $.ajax({
-                url: "/save-chat",
-                type: "POST",
-                data: { sender_id:sender_id, 
-                    receiver_id: receiver_id, 
-                    message: message 
-                },
-                success: (response) => {
-                    if (response.success) {
-                        console.log(response);
-                        $("#message").val('');
-                        let chat = response.data.message;
-                        let html =` 
-                            <div class="current-user-chat">
-
-                                <h5>` + chat + `</h5> 
-                            </div>`;
-                        $("#chat-container").append(html);
-                        socket.emit("newChat", response.data);
-                    } else {
-                        alert(response.msg)
-                    }
-                }
-            })
-        })
-
-            socket.on("loadNewChat", (data) => {
-                if(sender_id == data.receiver_id && receiver_id == data.sender_id) {
-                    let html = ` 
-                                <div class="distance-user-chat">
-                                    <h5>`+data.message+`</h5> 
-                                </div>`;
-                                $("#chat-container").append(html);
-                }
-  })
-
-    socket.on("loadChats", (data) => {
-        $("#chat-container").html('');
-
-        let chats = data.chats;
-        let html = "";
-
-        for(let i = 0; i < chats.length; i++) {
-            
-            let addClass = '';
-            if(chats[i]["sender_id"] == sender_id) {
-                addClass = "current-user-chat"
-            } else {
-                addClass = "other-user-chat"
-            }
-
-            html += `
-                    <div class='`+addClass+`'>
-                        <h5>`+chats[i]["message"]+`</h5> 
-                    </div>
-            
-                        `
-        }
-        $("#chat-container").append(html);
-    })
-    </script>	
-	<script type="text/javascript" src="/lcars.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="/chat.js"></script>
+	<script src="/lcars.js"></script>
 </body>
 
 </html>

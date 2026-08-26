@@ -1,21 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-	<title>StarFleet Comms</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="format-detection" content="telephone=no">
-	<meta name="format-detection" content="date=no">
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="icon" type="image/x-icon" href="/public/images/favicon.ico">
-	<link rel="stylesheet" href="lcars-ultra-classic.css">
-	<link rel="stylesheet" href="/lcars-colors.css">
-	<script src="/jquery-3.6.3.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
-</head>
+<%- include("./partials/head", { pageTitle: "Starfleet Communications — Login" }) %>
 
 <body>
 	<section class="wrap-standard" id="column-3">
@@ -74,42 +60,37 @@
 				</div>
 				<main>
 
-					<!-- Start your content here. -->
-		
-					<h2>Welcome to LCARS</h2>
-
-					<p>Register or Login to join StarFleet Comm</p>
-
+					<h1>Starfleet Communications</h1>
+					<p>A private real-time channel for registered crew members.</p>
 					<p>Live long and prosper.</p>
-					
-					<!-- End content area. -->
 
                     <div class="lcars-text-bar">
-                        <span>login here</span>
-                      </div>
-                    <%
-                        if (typeof message !== "undefined") {
-                            %>
-                                <h4 style="color:red;"><%= message %></h4>
-                            <%
-                        }
-                    %>
-                    
-                    <div class="input-group">
-                        <form action="" method="POST">
-                            <input type="text" placeholder="Enter Username" name="username" required />
-                            <br><br>
-                            <input type="password" placeholder="Enter Password" name="password" required />
-                            <br><br>
-                            <input type="submit" value="Login">
-                        </form>    
+                        <span>Authenticate</span>
                     </div>
+
+                    <% if (typeof message !== "undefined") { %>
+                        <p class="notice" role="alert"><%= message %></p>
+                    <% } %>
+
+                    <form action="/login" method="POST" class="form-stack">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <label>
+                            Username
+                            <input type="text" name="username" autocomplete="username" minlength="3" maxlength="32" required>
+                        </label>
+                        <label>
+                            Password
+                            <input type="password" name="password" autocomplete="current-password" maxlength="128" required>
+                        </label>
+                        <input type="submit" value="Log in">
+                    </form>
+                    <p>New crew member? <a href="/register">Create a profile</a>.</p>
 
 				</main>
 			</div>
 		</div>
 	</section>	
-	<script type="text/javascript" src="/lcars.js"></script>
+	<script src="/lcars.js"></script>
 </body>
 
 </html>

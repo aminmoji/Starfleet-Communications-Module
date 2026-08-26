@@ -1,18 +1,24 @@
-document.addEventListener("touchstart", function () {}, false);
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollLink = document.querySelector("#scroll-top");
 
-$(window).scroll(function () {
-  var height = $(window).scrollTop();
-  if (height > 100) {
-    $(".scroll-top a").fadeIn();
-  } else {
-    $(".scroll-top a").fadeOut();
+  if (scrollLink) {
+    const updateScrollLink = () => {
+      scrollLink.hidden = window.scrollY <= 100;
+    };
+
+    updateScrollLink();
+    window.addEventListener("scroll", updateScrollLink, { passive: true });
+    scrollLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   }
-});
 
-$(document).ready(function () {
-  $("#scroll-top").click(function (event) {
-    event.preventDefault();
-    $("html, body").animate({ scrollTop: 0 }, "slow");
-    return false;
+  document.querySelectorAll("[data-confirm]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (!window.confirm(form.dataset.confirm)) {
+        event.preventDefault();
+      }
+    });
   });
 });

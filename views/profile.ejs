@@ -1,18 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-	<title>StarFleet Comms Registration</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="format-detection" content="telephone=no">
-	<meta name="format-detection" content="date=no">
-	<link rel="stylesheet" href="lcars-ultra-classic.css">
-	<link rel="stylesheet" href="/lcars-colors.css">
-	<link rel="icon" type="image/x-icon" href="/public/images/favicon.ico">
-	<script src="/jquery-3.6.3.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
-</head>
+<%- include("./partials/head", { pageTitle: "Starfleet Communications — Profile" }) %>
 
 <body>
 	<section class="wrap-standard" id="column-3">
@@ -70,44 +59,56 @@
                     <div class="lcars-text-bar">
                         <span>Edit profile</span>
                     </div>
-                    <div class="edit-profile">
-                        <form action="/update" method="POST" enctype="multipart/form-data">
-                            <input type="text" name="username" placeholder="<%= user.username %>" />
-                            <br><br>
-                            <input type="text" name="firstname" placeholder="<%= user.firstname %>" />
-                            <br><br>
-                            <input type="text" name="lastname" placeholder="<%= user.lastname %>" />
-                            <br><br>
-                            <input type="password" name="password" placeholder="Enter Password" required>
-                            <br><br>
-                            <label for="image">Select Your Picture: </label>
-                            <input type="file" name="image">
-                            <br><br>
-                            <input type="text" name="rank" placeholder="<%= user.rank %>" />
-                            <br><br>
-                            <input type="text" name="ship" placeholder="<%= user.ship %>" />
-                            <br><br>
-                            <input type="text" name="species" placeholder="<%= user.species %>" />
-                            <br><br>
-                            <input type="submit" value="EDIT">
-                        </form>
-						<form action="/delete?_method=DELETE" method="POST">
-							<input type="submit" value="Delete">
-						</form>
+                    <% if (typeof message !== "undefined") { %>
+                        <p class="notice" role="alert"><%= message %></p>
+                    <% } %>
 
-                        <% if(typeof message !== "undefined") { %>
-                            <p style="color: green"><%= message %></p>
-                        <% } %>
-                    </div>    
+                    <form action="/profile" method="POST" enctype="multipart/form-data" class="form-stack">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <label>
+                            Username
+                            <input type="text" name="username" value="<%= user.username %>" minlength="3" maxlength="32" pattern="[A-Za-z0-9._-]+" required>
+                        </label>
+                        <label>
+                            First name
+                            <input type="text" name="firstname" value="<%= user.firstname %>" maxlength="60" required>
+                        </label>
+                        <label>
+                            Last name
+                            <input type="text" name="lastname" value="<%= user.lastname %>" maxlength="60" required>
+                        </label>
+                        <label>
+                            New password (leave blank to keep the current password)
+                            <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="128">
+                        </label>
+                        <label>
+                            New profile image
+                            <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
+                        </label>
+                        <label>
+                            Rank
+                            <input type="text" name="rank" value="<%= user.rank %>" maxlength="80" required>
+                        </label>
+                        <label>
+                            Assigned ship
+                            <input type="text" name="ship" value="<%= user.ship %>" maxlength="80" required>
+                        </label>
+                        <label>
+                            Species
+                            <input type="text" name="species" value="<%= user.species %>" maxlength="80" required>
+                        </label>
+                        <input type="submit" value="Save profile">
+                    </form>
 
-					<!-- End content area. -->
-
-					
+					<form action="/profile/delete" method="POST" data-confirm="Delete your profile and all message history?">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+						<input class="danger-button" type="submit" value="Delete profile">
+					</form>
 				</main>
 			</div>
 		</div>
 	</section>	
-	<script type="text/javascript" src="/lcars.js"></script>
+	<script src="/lcars.js"></script>
 </body>
 
 </html>

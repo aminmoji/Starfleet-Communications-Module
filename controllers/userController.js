@@ -1,240 +1,283 @@
-const User = require("../models/userModel");
-const Chat = require("../models/chatModel");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { BlobServiceClient } = require("@azure/storage-blob");
-require("dotenv").config();
 
-const registerLoad = async (req, res) => {
-  try {
-    res.render("register");
-  } catch (error) {
-    console.log(error.message);
-  }
+const User = require("../models/userModel");
+const Chat = require("../models/chatModel");
+
+const DEFAULT_AVATAR = "/default-avatar.svg";
+const IMAGE_EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
 };
 
-const register = async (req, res) => {
-  try {
-    const checkUserName = await User.findOne({ username: req.body.username });
-    if (checkUserName) {
-      return res.render("register", { message: "Username Already Exists." });
-    } else {
-      if (req.file) {
-        const blobServiceClient = BlobServiceClient.fromConnectionString(
-          process.env.AZURE_STORAGE_CONNECTION_STRING
-        );
-        const containerName = process.env.CONTAINER_NAME;
-        const containerClient =
-          blobServiceClient.getContainerClient(containerName);
-        const blobName = req.file.originalname;
-        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-        const imageData = req.file.buffer;
+class InputError extends Error {}
 
-        await blockBlobClient.upload(imageData, imageData.length);
+function cleanField(value, label, { min = 1, max = 80, required = true } = {}) {
+  const cleanValue = typeof value === "string" ? value.trim() : "";
 
-        const imageUrl = blockBlobClient.url;
-        // user.image = imageUrl;
-
-        // const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
-        // await client.connect();
-        // const database = client.db(process.env.MONGODB_DATABASE_NAME);
-        // const collection = database.collection("users");
-        // await collection.insertOne(user);
-        // await client.close();
-
-        const passwordHash = await bcrypt.hash(req.body.password, 10);
-        const user = new User({
-          username: req.body.username,
-          firstname: req.body.firstname,
-          lastname: req.body.lastname,
-          password: passwordHash,
-          ship: req.body.ship,
-          species: req.body.species,
-          rank: req.body.rank,
-          image: imageUrl,
-        });
-        await user.save();
-      }
-      res.redirect("/login");
-    }
-  } catch (error) {
-    console.log("Registration Error: " + error.message);
+  if (required && cleanValue.length < min) {
+    throw new InputError(`${label} is required.`);
   }
-};
 
-const loadLogin = async (req, res) => {
-  try {
-    res.render("login");
-  } catch (error) {
-    console.log(error.message);
+  if (cleanValue && (cleanValue.length < min || cleanValue.length > max)) {
+    throw new InputError(`${label} must be between ${min} and ${max} characters.`);
   }
-};
 
-const login = async (req, res) => {
-  try {
-    const username = req.body.username;
-    const password = req.body.password;
+  return cleanValue;
+}
 
-    const userData = await User.findOne({ username: username });
-    if (userData) {
-      const passwordMatch = await bcrypt.compare(password, userData.password);
-      if (passwordMatch) {
-        req.session.user = userData;
-        res.redirect("/dashboard");
-      } else {
-        res.render("login", {
-          message: "Username and Password are Incorrect!",
-        });
-      }
-    } else {
-      res.render("login", { message: "Username and Password are Incorrect!" });
-    }
-  } catch (error) {
-    console.log(error.message);
+function normalizeUsername(value) {
+  const username = cleanField(value, "Username", { min: 3, max: 32 }).toLowerCase();
+
+  if (!/^[a-z0-9._-]+$/.test(username)) {
+    throw new InputError("Username may use letters, numbers, dots, underscores, and hyphens.");
   }
-};
 
-const logout = async (req, res) => {
-  try {
-    req.session.destroy();
-    res.redirect("/");
-  } catch (error) {
-    console.log(error.message);
+  return username;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function uploadAvatar(file) {
+  if (!file) {
+    return null;
   }
-};
 
-const loadProfile = async (req, res) => {
-  const editUser = await User.findById(req.session.user._id).exec();
-  res.render("profile", {
-    user: editUser,
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  const containerName = process.env.CONTAINER_NAME;
+  if (!connectionString || !containerName) {
+    throw new InputError("Profile-image uploads are not configured on this deployment.");
+  }
+
+  const extension = IMAGE_EXTENSIONS[file.mimetype];
+  const blobName = `${crypto.randomUUID()}.${extension}`;
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+  await blockBlobClient.uploadData(file.buffer, {
+    blobHTTPHeaders: {
+      blobContentType: file.mimetype,
+      blobCacheControl: "public, max-age=31536000, immutable",
+    },
   });
-};
 
-const editProfile = async (req, res) => {
-  const passwordHash = await bcrypt.hash(req.body.password, 10);
-  const update = {
-    username: req.body.username,
-    firstname: req.body.firstname,
-    lastname: req.body.lastname,
-    password: passwordHash,
-    rank: req.body.rank,
-    ship: req.body.ship,
-    species: req.body.species,
-  };
+  return blockBlobClient.url;
+}
 
-  if (req.file) {
-    const blobName = `${Date.now()}-${req.file.originalname}`;
-    const containerName = process.env.CONTAINER_NAME;
-    const blobServiceClient = BlobServiceClient.fromConnectionString(
-      process.env.AZURE_STORAGE_CONNECTION_STRING
-    );
-    const containerClient =
-      blobServiceClient.getContainerClient(containerName);
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+function regenerateSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((error) => (error ? reject(error) : resolve()));
+  });
+}
 
-    await blockBlobClient.uploadData(req.file.buffer, {
-      blobHTTPHeaders: { blobContentType: req.file.mimetype },
-    });
+function destroySession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.destroy((error) => (error ? reject(error) : resolve()));
+  });
+}
 
-    update.image = blockBlobClient.url;
-  }
+function registerLoad(req, res) {
+  res.render("register");
+}
 
-  await User.findByIdAndUpdate(req.session.user._id, update);
-  res.redirect("/dashboard");
-};
-
-const deleteProfile = async (req, res) => {
-  await User.findByIdAndDelete(req.session.user._id);
-  console.log("deleted");
-  res.redirect("/login");
-};
-
-const loadDashboard = async (req, res) => {
+async function register(req, res) {
   try {
-    let users = await User.find({ _id: { $nin: [req.session.user._id] } });
-    res.render("dashboard", {
-      user: req.session.user,
-      users: users,
+    const username = normalizeUsername(req.body.username);
+    const password = cleanField(req.body.password, "Password", { min: 8, max: 128 });
+    const existingUser = await User.exists({ username });
+
+    if (existingUser) {
+      return res.status(409).render("register", { message: "That username is already in use." });
+    }
+
+    const uploadedImage = await uploadAvatar(req.file);
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await User.create({
+      username,
+      firstname: cleanField(req.body.firstname, "First name", { max: 60 }),
+      lastname: cleanField(req.body.lastname, "Last name", { max: 60 }),
+      password: passwordHash,
+      ship: cleanField(req.body.ship, "Ship", { max: 80 }),
+      species: cleanField(req.body.species, "Species", { max: 80 }),
+      rank: cleanField(req.body.rank, "Rank", { max: 80 }),
+      image: uploadedImage || DEFAULT_AVATAR,
     });
+
+    return res.redirect("/login");
   } catch (error) {
-    console.log(error.message);
-  }
-};
+    if (error instanceof InputError) {
+      return res.status(400).render("register", { message: error.message });
+    }
+    if (error?.code === 11000) {
+      return res.status(409).render("register", { message: "That username is already in use." });
+    }
 
-const saveChat = async (req, res) => {
-  try {
-    const chat = new Chat({
-      sender_id: req.body.sender_id,
-      receiver_id: req.body.receiver_id,
-      message: req.body.message,
-    });
-    var newChat = await chat.save();
-    res
-      .status(200)
-      .send({ success: true, msg: "Chat inserted!", data: newChat });
-  } catch (error) {
-    res.status(400).send({ success: false, msg: error.message });
+    console.error("Registration failed", error);
+    return res.status(500).render("register", { message: "Registration is temporarily unavailable." });
   }
-};
+}
 
-const lookUpCrew = async (req, res) => {
+function loadLogin(req, res) {
+  res.render("login");
+}
+
+async function login(req, res) {
   try {
-    const query = req.body.query;
-    if (req.body.query.length) {
-      const users = await User.find({
-        _id: { $nin: req.session.user._id },
-        $or: [
-          {
-            lastname: {
-              $regex: query,
-              $options: "i",
-            },
-          },
-          {
-            firstname: {
-              $regex: query,
-              $options: "i",
-            },
-          },
-          {
-            rank: {
-              $regex: query,
-              $options: "i",
-            },
-          },
-          {
-            ship: {
-              $regex: query,
-              $options: "i",
-            },
-          },
-          {
-            species: {
-              $regex: query,
-              $options: "i",
-            },
-          },
-        ],
-      });
-      res.render("dashboardQuery", {
-        users: users,
-        user: req.session.user,
+    const username = normalizeUsername(req.body.username);
+    const password = cleanField(req.body.password, "Password", { min: 1, max: 128 });
+    const user = await User.findOne({ username }).select("+password");
+    const passwordMatches = user ? await bcrypt.compare(password, user.password) : false;
+
+    if (!passwordMatches) {
+      return res.status(401).render("login", {
+        message: "The username or password is incorrect.",
       });
     }
+
+    await regenerateSession(req);
+    req.session.userId = String(user._id);
+    return res.redirect("/dashboard");
   } catch (error) {
-    console.log(error.message);
+    if (error instanceof InputError) {
+      return res.status(401).render("login", { message: "The username or password is incorrect." });
+    }
+
+    console.error("Login failed", error);
+    return res.status(500).render("login", { message: "Login is temporarily unavailable." });
   }
-};
+}
+
+async function logout(req, res) {
+  await User.findByIdAndUpdate(req.session.userId, { is_online: false }).catch(() => {});
+  await destroySession(req);
+  res.clearCookie("starfleet.sid");
+  return res.redirect("/login");
+}
+
+async function loadProfile(req, res) {
+  const user = await User.findById(req.session.userId).lean();
+  if (!user) {
+    await destroySession(req);
+    return res.redirect("/login");
+  }
+
+  return res.render("profile", { user });
+}
+
+async function editProfile(req, res) {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      await destroySession(req);
+      return res.redirect("/login");
+    }
+
+    const username = req.body.username ? normalizeUsername(req.body.username) : user.username;
+    if (username !== user.username && (await User.exists({ username }))) {
+      return res.status(409).render("profile", {
+        user: user.toObject(),
+        message: "That username is already in use.",
+      });
+    }
+
+    user.username = username;
+    user.firstname = req.body.firstname
+      ? cleanField(req.body.firstname, "First name", { max: 60 })
+      : user.firstname;
+    user.lastname = req.body.lastname
+      ? cleanField(req.body.lastname, "Last name", { max: 60 })
+      : user.lastname;
+    user.rank = req.body.rank ? cleanField(req.body.rank, "Rank", { max: 80 }) : user.rank;
+    user.ship = req.body.ship ? cleanField(req.body.ship, "Ship", { max: 80 }) : user.ship;
+    user.species = req.body.species
+      ? cleanField(req.body.species, "Species", { max: 80 })
+      : user.species;
+
+    if (req.body.password) {
+      const password = cleanField(req.body.password, "Password", { min: 8, max: 128 });
+      user.password = await bcrypt.hash(password, 12);
+    }
+
+    const uploadedImage = await uploadAvatar(req.file);
+    if (uploadedImage) {
+      user.image = uploadedImage;
+    }
+
+    await user.save();
+    return res.redirect("/dashboard");
+  } catch (error) {
+    if (error instanceof InputError) {
+      const user = await User.findById(req.session.userId).lean();
+      return res.status(400).render("profile", { user, message: error.message });
+    }
+
+    console.error("Profile update failed", error);
+    const user = await User.findById(req.session.userId).lean();
+    return res.status(500).render("profile", {
+      user,
+      message: "Profile changes could not be saved.",
+    });
+  }
+}
+
+async function deleteProfile(req, res) {
+  const userId = req.session.userId;
+  await Promise.all([
+    User.findByIdAndDelete(userId),
+    Chat.deleteMany({ $or: [{ sender_id: userId }, { receiver_id: userId }] }),
+  ]);
+  await destroySession(req);
+  res.clearCookie("starfleet.sid");
+  return res.redirect("/login");
+}
+
+async function loadDashboard(req, res) {
+  try {
+    const user = await User.findById(req.session.userId).lean();
+    if (!user) {
+      await destroySession(req);
+      return res.redirect("/login");
+    }
+
+    const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 60) : "";
+    const filter = { _id: { $ne: user._id } };
+
+    if (query) {
+      const search = new RegExp(escapeRegExp(query), "i");
+      filter.$or = [
+        { username: search },
+        { firstname: search },
+        { lastname: search },
+        { rank: search },
+        { ship: search },
+        { species: search },
+      ];
+    }
+
+    const users = await User.find(filter).sort({ is_online: -1, lastname: 1 }).lean();
+    return res.render("dashboard", { user, users, query });
+  } catch (error) {
+    console.error("Dashboard failed", error);
+    return res.status(500).render("login", {
+      message: "Crew records are temporarily unavailable.",
+    });
+  }
+}
 
 module.exports = {
+  deleteProfile,
+  editProfile,
+  loadDashboard,
+  loadLogin,
+  loadProfile,
+  login,
+  logout,
   register,
   registerLoad,
-  loadDashboard,
-  login,
-  loadLogin,
-  logout,
-  saveChat,
-  lookUpCrew,
-  loadProfile,
-  editProfile,
-  deleteProfile,
 };

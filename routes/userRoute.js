@@ -1,48 +1,38 @@
 const express = require("express");
-const { upload } = require("../middlewares/upload");
-
-const user_route = express();
-
-const bodyParser = require("body-parser");
-
-const session = require("express-session");
-user_route.use(session({ secret: process.env.SESSION_SECRET }));
-
-user_route.use(bodyParser.json());
-user_route.use(bodyParser.urlencoded({ extended: true }));
-
-user_route.set("view engine", "ejs");
-user_route.set("views", "./views");
-
-user_route.use(express.static("public"));
 
 const userController = require("../controllers/userController");
-
 const auth = require("../middlewares/auth");
+const { verifyCsrfToken } = require("../middlewares/csrf");
+const { createRateLimiter } = require("../middlewares/security");
+const { upload } = require("../middlewares/upload");
 
-user_route.get("/register", auth.isLoggedout, userController.registerLoad);
-user_route.post("/register", upload.single("image"), userController.register);
+const router = express.Router();
+const authLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20 });
 
-user_route.get("/", auth.isLoggedout, userController.loadLogin);
-user_route.post("/", userController.login);
-user_route.get("/logout", auth.isLoggedin, userController.logout);
-user_route.post("/lookUp", userController.lookUpCrew);
+router.get("/", auth.isLoggedOut, userController.loadLogin);
+router.get("/login", auth.isLoggedOut, userController.loadLogin);
+router.post("/login", auth.isLoggedOut, authLimiter, verifyCsrfToken, userController.login);
 
-user_route.get("/profile", auth.isLoggedin, userController.loadProfile);
-user_route.post(
-  "/update",
-  auth.isLoggedin,
+router.get("/register", auth.isLoggedOut, userController.registerLoad);
+router.post(
+  "/register",
+  auth.isLoggedOut,
+  authLimiter,
   upload.single("image"),
-  userController.editProfile
+  verifyCsrfToken,
+  userController.register
 );
 
-user_route.post("/delete", auth.isLoggedin, userController.deleteProfile);
+router.post("/logout", auth.isLoggedIn, verifyCsrfToken, userController.logout);
+router.get("/dashboard", auth.isLoggedIn, userController.loadDashboard);
+router.get("/profile", auth.isLoggedIn, userController.loadProfile);
+router.post(
+  "/profile",
+  auth.isLoggedIn,
+  upload.single("image"),
+  verifyCsrfToken,
+  userController.editProfile
+);
+router.post("/profile/delete", auth.isLoggedIn, verifyCsrfToken, userController.deleteProfile);
 
-user_route.get("/dashboard", auth.isLoggedin, userController.loadDashboard);
-user_route.post("/save-chat", userController.saveChat);
-
-user_route.get("*", function (req, res) {
-  res.redirect("/");
-});
-
-module.exports = user_route;
+module.exports = router;

@@ -1,29 +1,9 @@
-<nav id="nav-standard"> 
-    <% if (user) { %>
-    <a href="/" id="b-one">Home 01</a>
-    <a href="" id="b-two"><%= user.firstname %> 02</a>
-    <form action="profile" method="GET">
-        <a href="/profile" id="b-three" onclick="" id="profileEdit">profile 03</a>
-    </form>    
-    <form action="/logout" method="GET" id="logOut">
-        <a href="#" id="b-five" onclick="submitFunction()">Log Out 04</a>
+<nav id="nav-standard" aria-label="Primary navigation">
+    <a href="/dashboard" id="b-one">Crew 01</a>
+    <a href="/profile" id="b-two"><%= user.firstname %> 02</a>
+    <a href="/profile" id="b-three">Profile 03</a>
+    <form action="/logout" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" id="b-five">Log out 04</button>
     </form>
-    <script>
-        function profileSubmit() {
-            button = document.getElementById("profileEdit");
-            button.submit();
-        }
-    </script>
-    <script>
-        function submitFunction() {
-            document.getElementById("logOut").submit();
-        }
-    </script>
-    <% } else { %>
-        <a href="/" id="b-one">Home 01</a>
-        <a href="/users/new" id="b-two">Register 02</a>
-        <a href="" id="b-three">03</a>
-        <a href="/sessions/new" id="b-five">Login 04</a>
-    </form>
-    <% } %>    
 </nav>

@@ -1,77 +1,93 @@
 # Starfleet Communications Module
 
-A Star Trek: The Next Generation-inspired real-time chat application built as a boot-camp project.
+A Star Trek: The Next Generation-inspired real-time chat application built with Express, MongoDB, EJS, and Socket.IO.
 
-Users can register, maintain a crew profile, see other users, search for crew members, view online/offline status, and exchange messages. Chat history is stored in MongoDB and real-time updates use Socket.IO.
+The interface presents crew profiles through an LCARS-style dashboard. Authenticated users can search the crew directory, see presence changes, open a private conversation, and exchange messages in real time.
 
-## Features
+## What it demonstrates
 
-- User registration and login
+- Session-based registration and login
 - Password hashing with bcrypt
-- Session-based authentication
-- Crew profiles
-- Profile-image upload to Azure Blob Storage
-- Online/offline presence
-- Real-time one-to-one messaging with Socket.IO
-- Stored conversation history
-- Crew-member search
-- EJS-rendered interface
-- Jest database integration test setup
+- MongoDB-backed users, messages, and production sessions
+- Authenticated Socket.IO connections
+- Private user rooms and server-authorized conversation history
+- Online presence across multiple browser tabs
+- Crew search across names, ranks, ships, and species
+- Optional Azure Blob Storage profile images
+- Responsive EJS interface with an LCARS visual system
 
-## Tech stack
+## Application structure
 
-- Node.js
-- Express
-- EJS
-- MongoDB / Mongoose
-- Socket.IO
-- bcrypt
-- express-session
-- Azure Blob Storage
-- Jest
+```text
+app.js                 Express, sessions, Socket.IO, and startup
+controllers/           Account and crew-directory operations
+middlewares/           Authentication, CSRF, uploads, headers, and rate limits
+models/                Mongoose models for users, messages, and sessions
+routes/                HTTP route definitions
+views/                 EJS pages and shared partials
+public/                Browser JavaScript, styles, fonts, and default avatar
+```
 
-## Screenshots
+Messages are written through the authenticated Socket.IO connection. The server derives the sender from the session, validates the recipient, stores the message, and emits it only to the recipient's private room. The browser never supplies a trusted sender ID.
 
-![Starfleet Communications Module](https://user-images.githubusercontent.com/125992224/232073724-32606a02-e9a9-41e2-8c31-c6e1d938974d.png)
+## Security controls
 
-![Starfleet Communications Module](https://user-images.githubusercontent.com/125992224/232074669-2a8755e5-2447-4c9e-8736-7186f24ee9a9.png)
+- HTTP-only, same-site session cookies; secure cookies in production
+- MongoDB session storage in production
+- Session regeneration after login
+- CSRF validation for every state-changing HTTP form
+- Rate limiting on login and registration
+- Server-side authorization for chat history and message delivery
+- Escaped DOM rendering for message text
+- Restrictive security headers and frame protection
+- Upload allowlist for JPEG, PNG, and WebP files with a 5 MB limit
+- Randomized Azure blob names
+- Generic authentication errors to avoid username enumeration
 
 ## Local setup
+
+Requirements:
+
+- Node.js 20 or newer
+- MongoDB
+- An Azure Storage container only if profile-image uploads are needed
 
 ```bash
 git clone https://github.com/aminmoji/Starfleet-Communications-Module.git
 cd Starfleet-Communications-Module
-
-npm install
+npm ci
 cp .env.example .env
 npm start
 ```
 
-## Environment variables
+Open `http://localhost:3000`.
 
-```text
-PORT
-DATABASE_URL
-SESSION_SECRET
-AZURE_STORAGE_CONNECTION_STRING
-CONTAINER_NAME
-```
+## Configuration
 
-Do not commit `.env` or Azure/MongoDB credentials.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NODE_ENV` | No | Set to `production` for secure cookies and persistent sessions |
+| `PORT` | No | HTTP port; defaults to `3000` |
+| `DATABASE_URL` | Yes | MongoDB connection string |
+| `SESSION_SECRET` | Production | Long random value used to sign session cookies |
+| `AZURE_STORAGE_CONNECTION_STRING` | For uploads | Azure Storage credentials |
+| `CONTAINER_NAME` | For uploads | Blob container used for public profile images |
 
-## Tests
+Without Azure configuration, registration and profile editing still work with the built-in avatar as long as no image is uploaded.
+
+## Verification
 
 ```bash
+npm run check
 npm test
 ```
 
-## Future ideas from the original project
+The test suite checks health responses, security headers, CSRF issuance, and invalid CSRF rejection. Database behavior is exercised by the application against the configured MongoDB instance.
 
-- Group chats based on ship assignment or mission
-- Expanded crew search and filtering
+## Project background
 
-## Project status
+This began as a 2023 boot-camp project and remains a portfolio example of a traditional server-rendered Node.js application with real-time features.
 
-Historical portfolio / learning project.
+The LCARS stylesheet is credited in its source to [Jim Robertus / The LCARS Computer Network](https://www.thelcars.com/). Star Trek and related marks belong to their respective owners; this is an unofficial, non-commercial fan project.
 
-The project is kept recognizable as the original implementation. Cleanup focuses on security, documentation, and clear defects rather than rewriting the codebase to resemble a newly generated project.
+Application code is released under [The Unlicense](LICENSE).

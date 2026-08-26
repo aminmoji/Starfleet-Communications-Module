@@ -1,18 +1,7 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-	<title>StarFleet Comms Registration</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta name="format-detection" content="telephone=no">
-	<meta name="format-detection" content="date=no">
-	<link rel="icon" type="image/x-icon" href="/public/images/favicon.ico">
-	<link rel="stylesheet" href="lcars-ultra-classic.css">
-	<link rel="stylesheet" href="/lcars-colors.css">
-	<script src="/jquery-3.6.3.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
-</head>
+<%- include("./partials/head", { pageTitle: "Starfleet Communications — Register" }) %>
 
 <body>
 	<section class="wrap-standard" id="column-3">
@@ -75,42 +64,52 @@
                     <div class="lcars-text-bar">
                         <span>REGISTER</span>
                     </div>
-                    <div class="registration">
-                        <form action="" method="POST" enctype="multipart/form-data">
+                    <% if (typeof message !== "undefined") { %>
+                        <p class="notice" role="alert"><%= message %></p>
+                    <% } %>
 
-                            <input type="text" name="username" placeholder="Enter Desired Username" required>
-                            <br><br>
-                            <input type="text" name="firstname" placeholder="Enter Your First Name" required>
-                            <br><br>
-                            <input type="text" name="lastname" placeholder="Enter Your Last Name" required>
-                            <br><br>
-                            <input type="password" name="password" placeholder="Enter Password" required>
-                            <br><br>
-                            <label for="image">Select Your Picture: </label>
-                            <input type="file" name="image" required>
-                            <br><br>
-                            <input type="text" name="rank" placeholder="Enter Your Rank" required>
-                            <br><br>
-                            <input type="text" name="ship" placeholder="Enter Your Assigned Ship" required>
-                            <br><br>
-                            <input type="text" name="species" placeholder="Enter Your Species" required>
-                            <br><br>
-                            <input type="submit" value="Register">
-                        </form>
-
-                        <% if(typeof message !== "undefined") { %>
-                            <p style="color: green"><%= message %></p>
-                        <% } %>
-                    </div>    
-
-					<!-- End content area. -->
-
-					
+                    <form action="/register" method="POST" enctype="multipart/form-data" class="form-stack">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <label>
+                            Username
+                            <input type="text" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9._-]+" required>
+                        </label>
+                        <label>
+                            First name
+                            <input type="text" name="firstname" autocomplete="given-name" maxlength="60" required>
+                        </label>
+                        <label>
+                            Last name
+                            <input type="text" name="lastname" autocomplete="family-name" maxlength="60" required>
+                        </label>
+                        <label>
+                            Password
+                            <input type="password" name="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                        </label>
+                        <label>
+                            Profile image (optional)
+                            <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
+                        </label>
+                        <label>
+                            Rank
+                            <input type="text" name="rank" maxlength="80" required>
+                        </label>
+                        <label>
+                            Assigned ship
+                            <input type="text" name="ship" maxlength="80" required>
+                        </label>
+                        <label>
+                            Species
+                            <input type="text" name="species" maxlength="80" required>
+                        </label>
+                        <input type="submit" value="Register">
+                    </form>
+                    <p>Already registered? <a href="/login">Return to login</a>.</p>
 				</main>
 			</div>
 		</div>
 	</section>	
-	<script type="text/javascript" src="/lcars.js"></script>
+	<script src="/lcars.js"></script>
 </body>
 
 </html>
