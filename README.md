@@ -44,6 +44,14 @@ Messages are written through the authenticated Socket.IO connection. The server 
 - Authenticated avatar delivery with immutable browser caching
 - Generic authentication errors to avoid username enumeration
 
+## End-to-end encrypted communications
+
+Messages and chat attachments are encrypted in the browser with Web Crypto before they are sent to the server. MongoDB stores ciphertext, initialization vectors, and routing metadata only; it cannot decrypt message content or attachments. Each browser keeps its private ECDH identity key in IndexedDB. Clearing site data or using a new browser creates a new identity, so earlier encrypted history cannot be recovered on that device.
+
+The dashboard supports in-app and browser notifications while the application is open. Notification bodies deliberately never include message contents. Audio and video calls use WebRTC; Socket.IO exchanges call setup data only and never carries media.
+
+For reliable calls across strict NAT/firewall combinations, configure a TURN service before treating calls as production-grade. The included STUN configuration is suitable for a portfolio demonstration.
+
 ## Local setup
 
 Requirements:

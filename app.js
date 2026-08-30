@@ -17,7 +17,7 @@ const { securityHeaders } = require("./middlewares/security");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  maxHttpBufferSize: 100_000,
+  maxHttpBufferSize: 12 * 1024 * 1024,
 });
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -122,6 +122,34 @@ userNamespace.on("connection", async (socket) => {
     console.error("Unable to update presence", error);
   }
 
+  socket.on("registerEncryptionKey", async ({ publicKey } = {}, respond = () => {}) => {
+    try {
+      if (typeof publicKey !== "string" || !/^[A-Za-z0-9+/]+={0,2}$/.test(publicKey) || publicKey.length > 512) {
+        return respond({ success: false, message: "Invalid encryption key." });
+      }
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { encryptionPublicKey: publicKey, $inc: { encryptionKeyVersion: 1 } },
+        { new: true }
+      ).select("+encryptionPublicKey encryptionKeyVersion");
+      return respond({ success: true, keyVersion: user.encryptionKeyVersion });
+    } catch (error) {
+      console.error("Unable to register encryption key", error);
+      return respond({ success: false, message: "Encryption setup failed." });
+    }
+  });
+
+  socket.on("getEncryptionKey", async ({ receiver_id: receiverId } = {}, respond = () => {}) => {
+    try {
+      if (!mongoose.isValidObjectId(receiverId)) return respond({ success: false });
+      const user = await User.findById(receiverId).select("+encryptionPublicKey encryptionKeyVersion").lean();
+      if (!user?.encryptionPublicKey) return respond({ success: false, message: "This crew member has not opened a secure channel yet." });
+      return respond({ success: true, publicKey: user.encryptionPublicKey, keyVersion: user.encryptionKeyVersion });
+    } catch (error) {
+      return respond({ success: false, message: "Unable to establish the secure channel." });
+    }
+  });
+
   socket.on("existingChats", async ({ receiver_id: receiverId } = {}, respond = () => {}) => {
     try {
       if (!mongoose.isValidObjectId(receiverId)) {
@@ -146,14 +174,19 @@ userNamespace.on("connection", async (socket) => {
     }
   });
 
-  socket.on("sendChat", async ({ receiver_id: receiverId, message } = {}, respond = () => {}) => {
+  socket.on("sendChat", async ({ receiver_id: receiverId, ciphertext, iv, keyVersion, attachment } = {}, respond = () => {}) => {
     try {
-      const cleanMessage = typeof message === "string" ? message.trim() : "";
       const now = Date.now();
       recentMessages = recentMessages.filter((timestamp) => now - timestamp < 10_000);
 
-      if (!mongoose.isValidObjectId(receiverId) || !cleanMessage || cleanMessage.length > 1000) {
-        return respond({ success: false, message: "Enter a message of up to 1,000 characters." });
+      const validCiphertext = typeof ciphertext === "string" && ciphertext.length > 0 && ciphertext.length <= 12_000_000;
+      const validIv = typeof iv === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(iv) && iv.length <= 64;
+      const validAttachment = !attachment || (
+        typeof attachment.ciphertext === "string" && attachment.ciphertext.length <= 12_000_000 &&
+        typeof attachment.iv === "string" && attachment.iv.length <= 64
+      );
+      if (!mongoose.isValidObjectId(receiverId) || !validCiphertext || !validIv || !Number.isInteger(keyVersion) || !validAttachment) {
+        return respond({ success: false, message: "Invalid encrypted transmission." });
       }
       if (recentMessages.length >= 20) {
         return respond({ success: false, message: "Message rate limit reached. Try again shortly." });
@@ -167,7 +200,10 @@ userNamespace.on("connection", async (socket) => {
       const chat = await Chat.create({
         sender_id: userId,
         receiver_id: receiverId,
-        message: cleanMessage,
+        ciphertext,
+        iv,
+        keyVersion,
+        attachment: attachment || undefined,
       });
       recentMessages.push(now);
       const payload = chat.toObject();
@@ -179,6 +215,15 @@ userNamespace.on("connection", async (socket) => {
       return respond({ success: false, message: "Message delivery failed." });
     }
   });
+
+  // WebRTC signaling only: call audio/video never traverses this server.
+  for (const eventName of ["call:offer", "call:answer", "call:ice", "call:end"]) {
+    socket.on(eventName, ({ receiver_id: receiverId, payload } = {}, respond = () => {}) => {
+      if (!mongoose.isValidObjectId(receiverId) || !payload) return respond({ success: false });
+      userNamespace.to(String(receiverId)).emit(eventName, { sender_id: userId, payload });
+      return respond({ success: true });
+    });
+  }
 
   socket.on("disconnect", async () => {
     const socketsForUser = activeSockets.get(userId);

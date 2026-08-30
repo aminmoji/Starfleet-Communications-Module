@@ -65,6 +65,15 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 80,
     },
+    encryptionPublicKey: {
+      type: String,
+      select: false,
+      maxlength: 512,
+    },
+    encryptionKeyVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

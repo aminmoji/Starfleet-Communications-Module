@@ -99,9 +99,21 @@
                             <h2 class="tagLine">Secure channel</h2>
                             <p id="chat-status" aria-live="polite"></p>
                             <div id="chat-container" aria-live="polite"></div>
+                            <div class="call-controls">
+                                <button type="button" id="enable-notifications">Enable notifications</button>
+                                <button type="button" id="voice-call">Voice call</button>
+                                <button type="button" id="video-call">Video call</button>
+                                <button type="button" id="end-call" hidden>End call</button>
+                            </div>
+                            <div id="call-status" aria-live="polite"></div>
+                            <div class="call-media" hidden>
+                                <video id="local-video" autoplay muted playsinline></video>
+                                <video id="remote-video" autoplay playsinline></video>
+                            </div>
                             <form id="chat-form">
                                 <label class="hop" for="message">Message</label>
-                                <input type="text" name="message" placeholder="Enter message" id="message" maxlength="1000" autocomplete="off" required>
+                                <input type="text" name="message" placeholder="Enter encrypted message" id="message" maxlength="1000" autocomplete="off">
+                                <input type="file" id="attachment" accept="image/*,.pdf,.txt,.zip,audio/*" aria-label="Encrypted attachment">
                                 <input type="submit" value="Send">
                             </form>
                         </section>

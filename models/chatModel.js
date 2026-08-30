@@ -14,11 +14,23 @@ const chatSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    message: {
+    ciphertext: {
       type: String,
       required: true,
-      trim: true,
-      maxlength: 1000,
+      maxlength: 12000000,
+    },
+    iv: {
+      type: String,
+      required: true,
+      maxlength: 64,
+    },
+    keyVersion: {
+      type: Number,
+      required: true,
+    },
+    attachment: {
+      ciphertext: { type: String, maxlength: 12000000 },
+      iv: { type: String, maxlength: 64 },
     },
   },
   {
