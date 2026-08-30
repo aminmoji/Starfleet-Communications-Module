@@ -9,6 +9,7 @@ services:
     startCommand: npm start
     healthCheckPath: /health
     autoDeployTrigger: checksPass
+    maxShutdownDelaySeconds: 30
     envVars:
       - key: NODE_ENV
         value: production
