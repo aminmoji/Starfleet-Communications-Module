@@ -53,4 +53,10 @@ describe("Starfleet Communications", () => {
     expect(tokensMatch("abc123", "short")).toBe(false);
     expect(tokensMatch(undefined, "abc123")).toBe(false);
   });
+
+  it("uses a ciphertext-only chat model", () => {
+    const Chat = require("./models/chatModel");
+    expect(Chat.schema.path("ciphertext")).toBeDefined();
+    expect(Chat.schema.path("message")).toBeUndefined();
+  });
 });

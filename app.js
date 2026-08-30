@@ -166,8 +166,13 @@ userNamespace.on("connection", async (socket) => {
         .limit(100)
         .lean();
 
-      chats.reverse();
-      return respond({ success: true, chats });
+      const decryptedChats = chats.map((chat) => ({
+        ...chat,
+        message: Chat.schema.path("message").get(chat.message),
+      }));
+
+      decryptedChats.reverse();
+      return respond({ success: true, chats: decryptedChats });
     } catch (error) {
       console.error("Unable to load conversation", error);
       return respond({ success: false, message: "Conversation history is unavailable." });
@@ -206,7 +211,7 @@ userNamespace.on("connection", async (socket) => {
         attachment: attachment || undefined,
       });
       recentMessages.push(now);
-      const payload = chat.toObject();
+      const payload = chat.toObject({ getters: true });
 
       userNamespace.to(String(receiverId)).emit("loadNewChat", payload);
       return respond({ success: true, chat: payload });
