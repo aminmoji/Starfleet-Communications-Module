@@ -166,13 +166,8 @@ userNamespace.on("connection", async (socket) => {
         .limit(100)
         .lean();
 
-      const decryptedChats = chats.map((chat) => ({
-        ...chat,
-        message: Chat.schema.path("message").get(chat.message),
-      }));
-
-      decryptedChats.reverse();
-      return respond({ success: true, chats: decryptedChats });
+      chats.reverse();
+      return respond({ success: true, chats });
     } catch (error) {
       console.error("Unable to load conversation", error);
       return respond({ success: false, message: "Conversation history is unavailable." });
