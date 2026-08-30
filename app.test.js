@@ -1,5 +1,6 @@
 const { app } = require("./app");
 const { tokensMatch } = require("./middlewares/csrf");
+const { encryptText, decryptText } = require("./models/chatModel");
 
 describe("Starfleet Communications", () => {
   let listener;
@@ -52,5 +53,14 @@ describe("Starfleet Communications", () => {
     expect(tokensMatch("abc123", "abc124")).toBe(false);
     expect(tokensMatch("abc123", "short")).toBe(false);
     expect(tokensMatch(undefined, "abc123")).toBe(false);
+  });
+
+  it("encrypts chat messages before storage and decrypts them on read", () => {
+    const plaintext = "Captain's log: all systems nominal.";
+    const encrypted = encryptText(plaintext);
+
+    expect(encrypted).not.toBe(plaintext);
+    expect(encrypted).not.toContain(plaintext);
+    expect(decryptText(encrypted)).toBe(plaintext);
   });
 });
