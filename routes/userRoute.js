@@ -24,6 +24,7 @@ router.post(
 );
 
 router.post("/logout", auth.isLoggedIn, verifyCsrfToken, userController.logout);
+router.get("/avatars/:userId", auth.isLoggedIn, userController.loadAvatar);
 router.get("/dashboard", auth.isLoggedIn, userController.loadDashboard);
 router.get("/profile", auth.isLoggedIn, userController.loadProfile);
 router.post(

@@ -13,7 +13,7 @@ The interface presents crew profiles through an LCARS-style dashboard. Authentic
 - Private user rooms and server-authorized conversation history
 - Online presence across multiple browser tabs
 - Crew search across names, ranks, ships, and species
-- Optional Azure Blob Storage profile images
+- MongoDB-backed profile images
 - Responsive EJS interface with an LCARS visual system
 
 ## Application structure
@@ -40,8 +40,8 @@ Messages are written through the authenticated Socket.IO connection. The server 
 - Server-side authorization for chat history and message delivery
 - Escaped DOM rendering for message text
 - Restrictive security headers and frame protection
-- Upload allowlist for JPEG, PNG, and WebP files with a 5 MB limit
-- Randomized Azure blob names
+- Upload allowlist for JPEG, PNG, and WebP files with a 1 MB limit
+- Authenticated avatar delivery with immutable browser caching
 - Generic authentication errors to avoid username enumeration
 
 ## Local setup
@@ -50,7 +50,6 @@ Requirements:
 
 - Node.js 20 or newer
 - MongoDB
-- An Azure Storage container only if profile-image uploads are needed
 
 ```bash
 git clone https://github.com/aminmoji/Starfleet-Communications-Module.git
@@ -70,10 +69,19 @@ Open `http://localhost:3000`.
 | `PORT` | No | HTTP port; defaults to `3000` |
 | `DATABASE_URL` | Yes | MongoDB connection string |
 | `SESSION_SECRET` | Production | Long random value used to sign session cookies |
-| `AZURE_STORAGE_CONNECTION_STRING` | For uploads | Azure Storage credentials |
-| `CONTAINER_NAME` | For uploads | Blob container used for public profile images |
 
-Without Azure configuration, registration and profile editing still work with the built-in avatar as long as no image is uploaded.
+Uploaded profile images are stored with the user record in MongoDB and limited to 1 MB. This keeps the portfolio deployment self-contained and avoids relying on an ephemeral server filesystem.
+
+## Deploy on Render
+
+The repository includes a `render.yaml` Blueprint for a free Render web service. It installs production dependencies, waits for GitHub CI to pass before deploying, and checks `/health` before promoting a build.
+
+1. Create or reuse a MongoDB Atlas database.
+2. In Render, create a new Blueprint from this repository.
+3. Enter the Atlas connection string when Render prompts for `DATABASE_URL`.
+4. Deploy the Blueprint. Render generates `SESSION_SECRET` automatically.
+
+No payment method is required for the free service. Free Render services sleep after periods of inactivity, so the first request after a quiet period can take about a minute.
 
 ## Verification
 

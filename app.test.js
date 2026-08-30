@@ -21,10 +21,10 @@ describe("Starfleet Communications", () => {
     const response = await fetch(`${baseUrl}/health`);
     const body = await response.json();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     expect(response.headers.get("x-powered-by")).toBeNull();
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
-    expect(body).toEqual({ status: "ok", database: "disconnected" });
+    expect(body).toEqual({ status: "degraded", database: "disconnected" });
   });
 
   it("issues a CSRF token on the login form", async () => {

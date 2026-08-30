@@ -63,9 +63,10 @@ app.use(
 );
 
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+  const databaseConnected = mongoose.connection.readyState === 1;
+  res.status(databaseConnected ? 200 : 503).json({
+    status: databaseConnected ? "ok" : "degraded",
+    database: databaseConnected ? "connected" : "disconnected",
   });
 });
 
@@ -83,7 +84,7 @@ app.use((error, req, res, next) => {
   const isUploadError = error?.name === "MulterError" || error?.code === "INVALID_FILE_TYPE";
   const status = isUploadError ? 400 : 500;
   const message = isUploadError
-    ? "Upload a JPEG, PNG, or WebP image no larger than 5 MB."
+    ? "Upload a JPEG, PNG, or WebP image no larger than 1 MB."
     : "The communications array encountered an error.";
 
   console.error(error);

@@ -1,16 +1,10 @@
-const crypto = require("crypto");
 const bcrypt = require("bcrypt");
-const { BlobServiceClient } = require("@azure/storage-blob");
+const mongoose = require("mongoose");
 
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
 
 const DEFAULT_AVATAR = "/default-avatar.svg";
-const IMAGE_EXTENSIONS = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
 class InputError extends Error {}
 
@@ -42,31 +36,41 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function uploadAvatar(file) {
+function hasValidImageSignature(file) {
+  const bytes = file.buffer;
+
+  if (file.mimetype === "image/jpeg") {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (file.mimetype === "image/png") {
+    return (
+      bytes.length >= 8 &&
+      bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    );
+  }
+  if (file.mimetype === "image/webp") {
+    return (
+      bytes.length >= 12 &&
+      bytes.subarray(0, 4).toString("ascii") === "RIFF" &&
+      bytes.subarray(8, 12).toString("ascii") === "WEBP"
+    );
+  }
+
+  return false;
+}
+
+function attachAvatar(user, file) {
   if (!file) {
-    return null;
+    return;
   }
 
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  const containerName = process.env.CONTAINER_NAME;
-  if (!connectionString || !containerName) {
-    throw new InputError("Profile-image uploads are not configured on this deployment.");
+  if (!hasValidImageSignature(file)) {
+    throw new InputError("Profile image contents do not match the selected file type.");
   }
 
-  const extension = IMAGE_EXTENSIONS[file.mimetype];
-  const blobName = `${crypto.randomUUID()}.${extension}`;
-  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-  const containerClient = blobServiceClient.getContainerClient(containerName);
-  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
-  await blockBlobClient.uploadData(file.buffer, {
-    blobHTTPHeaders: {
-      blobContentType: file.mimetype,
-      blobCacheControl: "public, max-age=31536000, immutable",
-    },
-  });
-
-  return blockBlobClient.url;
+  user.avatarData = file.buffer;
+  user.avatarContentType = file.mimetype;
+  user.image = `/avatars/${user._id}?v=${Date.now()}`;
 }
 
 function regenerateSession(req) {
@@ -95,10 +99,9 @@ async function register(req, res) {
       return res.status(409).render("register", { message: "That username is already in use." });
     }
 
-    const uploadedImage = await uploadAvatar(req.file);
     const passwordHash = await bcrypt.hash(password, 12);
 
-    await User.create({
+    const user = new User({
       username,
       firstname: cleanField(req.body.firstname, "First name", { max: 60 }),
       lastname: cleanField(req.body.lastname, "Last name", { max: 60 }),
@@ -106,8 +109,10 @@ async function register(req, res) {
       ship: cleanField(req.body.ship, "Ship", { max: 80 }),
       species: cleanField(req.body.species, "Species", { max: 80 }),
       rank: cleanField(req.body.rank, "Rank", { max: 80 }),
-      image: uploadedImage || DEFAULT_AVATAR,
+      image: DEFAULT_AVATAR,
     });
+    attachAvatar(user, req.file);
+    await user.save();
 
     return res.redirect("/login");
   } catch (error) {
@@ -204,10 +209,7 @@ async function editProfile(req, res) {
       user.password = await bcrypt.hash(password, 12);
     }
 
-    const uploadedImage = await uploadAvatar(req.file);
-    if (uploadedImage) {
-      user.image = uploadedImage;
-    }
+    attachAvatar(user, req.file);
 
     await user.save();
     return res.redirect("/dashboard");
@@ -223,6 +225,30 @@ async function editProfile(req, res) {
       user,
       message: "Profile changes could not be saved.",
     });
+  }
+}
+
+async function loadAvatar(req, res) {
+  try {
+    if (!mongoose.isValidObjectId(req.params.userId)) {
+      return res.status(404).end();
+    }
+
+    const user = await User.findById(req.params.userId).select("+avatarData +avatarContentType");
+    if (!user?.avatarData || !user.avatarContentType) {
+      return res.status(404).end();
+    }
+
+    res.set({
+      "Cache-Control": "private, max-age=31536000, immutable",
+      "Content-Type": user.avatarContentType,
+      "Content-Length": String(user.avatarData.length),
+      "X-Content-Type-Options": "nosniff",
+    });
+    return res.send(user.avatarData);
+  } catch (error) {
+    console.error("Avatar load failed", error);
+    return res.status(500).end();
   }
 }
 
@@ -273,6 +299,7 @@ async function loadDashboard(req, res) {
 module.exports = {
   deleteProfile,
   editProfile,
+  loadAvatar,
   loadDashboard,
   loadLogin,
   loadProfile,

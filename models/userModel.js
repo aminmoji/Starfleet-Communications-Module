@@ -34,6 +34,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "/default-avatar.svg",
     },
+    avatarData: {
+      type: Buffer,
+      select: false,
+    },
+    avatarContentType: {
+      type: String,
+      enum: ["image/jpeg", "image/png", "image/webp"],
+      select: false,
+    },
     password: {
       type: String,
       required: true,
