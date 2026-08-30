@@ -96,25 +96,41 @@
                         <% } %>
 
                         <section class="chat-section" aria-label="Conversation" hidden>
-                            <h2 class="tagLine">Secure channel</h2>
-                            <p id="chat-status" aria-live="polite"></p>
-                            <div id="chat-container" aria-live="polite"></div>
-                            <div class="call-controls">
-                                <button type="button" id="enable-notifications">Enable notifications</button>
-                                <button type="button" id="voice-call">Voice call</button>
-                                <button type="button" id="video-call">Video call</button>
-                                <button type="button" id="end-call" hidden>End call</button>
-                            </div>
-                            <div id="call-status" aria-live="polite"></div>
+                            <header class="comms-header">
+                                <span class="comms-rail">COMMS // 47</span>
+                                <div>
+                                    <p class="comms-kicker">PRIVATE SUBSPACE CHANNEL</p>
+                                    <h2 class="tagLine">Secure channel</h2>
+                                </div>
+                                <span id="channel-state" class="channel-state">INITIALIZING</span>
+                            </header>
+                            <p id="chat-status" class="comms-status" aria-live="polite"></p>
+                            <div id="chat-container" aria-live="polite" aria-label="Encrypted conversation"></div>
+                            <section class="call-console" aria-label="Call controls">
+                                <div class="call-actions">
+                                    <button type="button" id="voice-call">Audio</button>
+                                    <button type="button" id="video-call">Video</button>
+                                    <button type="button" id="enable-notifications">Alerts</button>
+                                    <button type="button" id="end-call" class="end-call" hidden>End channel</button>
+                                </div>
+                                <p id="call-status" aria-live="polite">Calls are encrypted peer-to-peer.</p>
+                                <div id="incoming-call" class="incoming-call" hidden>
+                                    <strong>Incoming transmission</strong>
+                                    <button type="button" id="accept-call">Accept</button>
+                                    <button type="button" id="decline-call">Decline</button>
+                                </div>
+                            </section>
                             <div class="call-media" hidden>
-                                <video id="local-video" autoplay muted playsinline></video>
-                                <video id="remote-video" autoplay playsinline></video>
+                                <video id="remote-video" autoplay playsinline aria-label="Remote video"></video>
+                                <video id="local-video" autoplay muted playsinline aria-label="Local video"></video>
                             </div>
-                            <form id="chat-form">
-                                <label class="hop" for="message">Message</label>
-                                <input type="text" name="message" placeholder="Enter encrypted message" id="message" maxlength="1000" autocomplete="off">
-                                <input type="file" id="attachment" accept="image/*,.pdf,.txt,.zip,audio/*" aria-label="Encrypted attachment">
-                                <input type="submit" value="Send">
+                            <form id="chat-form" class="message-console">
+                                <label class="hop" for="message">Transmission</label>
+                                <div class="message-controls">
+                                    <input type="text" name="message" placeholder="Type encrypted transmission" id="message" maxlength="1000" autocomplete="off">
+                                    <label class="attachment-control" for="attachment">Attach <input type="file" id="attachment" accept="image/*,.pdf,.txt,.zip,audio/*"></label>
+                                    <button type="submit" id="send-message">Transmit</button>
+                                </div>
                             </form>
                         </section>
 					</div>
